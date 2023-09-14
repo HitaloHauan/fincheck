@@ -1,14 +1,45 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { hash } from 'bcryptjs';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { SigninDto } from './dto/signin.dto';
 import { UserstRepository } from 'src/shared/database/repositories/users.repositories';
+import { compare, hash } from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
+import { SingnupDto } from './dto/signup.dto';
 
 @Injectable()
-export class UsersService {
-  constructor(private readonly usersRepo: UserstRepository) {}
+export class AuthService {
+  constructor(
+    private readonly usersRepo: UserstRepository,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    const { name, email, password } = createUserDto;
+  async signin(signinDto: SigninDto) {
+    const { email, password } = signinDto;
+
+    const user = await this.usersRepo.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('invalid credentials');
+    }
+
+    const isPasswordValid = await compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('invalid credentials');
+    }
+
+    const acessToken = await this.generateAccessToken(user.id);
+
+    return { acessToken };
+  }
+
+  async signup(signupDto: SingnupDto) {
+    const { name, email, password } = signupDto;
 
     const emailTaken = await this.usersRepo.findUnique({
       where: { email },
@@ -48,9 +79,12 @@ export class UsersService {
       },
     });
 
-    return {
-      name: user.name,
-      email: user.email,
-    };
+    const acessToken = await this.generateAccessToken(user.id);
+
+    return { acessToken };
+  }
+
+  private generateAccessToken(userId: string) {
+    return this.jwtService.signAsync({ sub: userId });
   }
 }
