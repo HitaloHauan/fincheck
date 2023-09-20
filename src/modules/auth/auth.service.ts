@@ -60,10 +60,11 @@ export class AuthService {
         Categoryes: {
           createMany: {
             data: [
+              // Income
               { name: 'Salário', icon: 'salary', type: 'INCOME' },
               { name: 'Freelance', icon: 'freelance', type: 'INCOME' },
               { name: 'Outro', icon: 'other', type: 'INCOME' },
-              // Expense
+              // Outcome
               { name: 'Casa', icon: 'home', type: 'OUTCOME' },
               { name: 'Alimentação', icon: 'food', type: 'OUTCOME' },
               { name: 'Educação', icon: 'education', type: 'OUTCOME' },
